@@ -1,0 +1,40 @@
+{
+  "name": "tree-sitter-rl",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the RL programming language",
+  "author": "MohamedGonem",
+  "license": "MIT",
+  "main": "bindings/node",
+  "keywords": [
+    "tree-sitter",
+    "rl",
+    "parser",
+    "syntax"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MohamedGonem/tree-sitter-rl"
+  },
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-gyp": "latest"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "latest"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.rl",
+      "file-types": ["rl"],
+      "highlights": "queries/highlights.scm",
+      "injection-regex": "^rl$"
+    }
+  ]
+}

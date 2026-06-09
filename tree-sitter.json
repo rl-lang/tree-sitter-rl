@@ -1,0 +1,42 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "rl",
+      "camelcase": "Rl",
+      "title": "Rl",
+      "scope": "source.rl",
+      "file-types": [
+        "rl"
+      ],
+      "injection-regex": "^rl$",
+      "class-name": "TreeSitterRl"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Tree-sitter grammer for the RL programming language",
+    "authors": [
+      {
+        "name": "Mohamed Gonem",
+        "email": "nightangelyt01@gmail.com",
+        "url": "https://github.com/MohamedGonem"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/MohamedGonem/tree-sitter-rl",
+      "funding": ""
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "java": false,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true,
+    "zig": false
+  }
+}
