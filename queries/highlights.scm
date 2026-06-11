@@ -7,15 +7,15 @@
   "for"
   "in"
   "return"
-  "break"
-  "continue"
 ] @keyword.control
+
+(break_statement) @keyword.control
+(continue_statement) @keyword.control
 
 [
   "dec"
-  "const"
+  "CONST"
   "fn"
-  "arr"
 ] @keyword.declaration
 
 [
@@ -24,7 +24,7 @@
   "bool"
   "string"
   "char"
-  "array"
+  "arr"
 ] @type.builtin
 
 [
@@ -112,8 +112,6 @@
 
 "."  @punctuation.delimiter
 ","  @punctuation.separator
-";"  @punctuation.terminator
-":"  @punctuation.delimiter
 
 "(" @punctuation.bracket
 ")" @punctuation.bracket
@@ -125,12 +123,11 @@
 ;  comments
 
 (line_comment)  @comment
-(block_comment) @comment
 
 ;  module paths
 
 (import_statement
-  module: (identifier) @namespace)
+  module: (path_expression) @namespace)
 
 (path_expression
   segment: (identifier) @namespace)

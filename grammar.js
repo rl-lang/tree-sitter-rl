@@ -4,7 +4,7 @@
 module.exports = grammar({
   name: "rl",
 
-  extras: ($) => [/\s/, $.line_comment, $.block_comment],
+  extras: ($) => [/\s/, $.line_comment],
 
   word: ($) => $.identifier,
 
@@ -36,6 +36,7 @@ module.exports = grammar({
     // fn name(type param, ...) -> type { body }
     function_declaration: ($) =>
       seq(
+        optional(repeat($.attribute)),
         "fn",
         field("name", $.identifier),
         "(",
@@ -63,7 +64,7 @@ module.exports = grammar({
     // const type name = value
     constant_declaration: ($) =>
       seq(
-        "const",
+        "CONST",
         field("type", $._type),
         field("name", $.identifier),
         "=",
@@ -137,11 +138,18 @@ module.exports = grammar({
 
     return_statement: ($) => seq("return", optional($._expression)),
 
-    break_statement: (_) => "break",
+    break_statement: (_) => token("break"),
 
-    continue_statement: (_) => "continue",
+    continue_statement: (_) => token("continue"),
 
     expression_statement: ($) => $._expression,
+
+    assign_expression: ($) => 
+      prec.right(1, seq(
+        field("name", $.identifier),
+        choice("=", "+=", "-=", "*=", "/="),
+        field("value", $._expression)
+      )),
 
     block: ($) => seq("{", repeat($._statement), "}"),
 
@@ -180,9 +188,7 @@ module.exports = grammar({
     unary_expression: ($) =>
       prec.right(5, seq(choice("!", "-"), $._expression)),
 
-    assign_expression: ($) =>
-      prec.right(1, seq(field("name", $.identifier), "=", field("value", $._expression))),
-
+    
     index_assign_expression: ($) =>
       prec.right(2, seq(
         field("target", $.identifier),
@@ -251,9 +257,9 @@ module.exports = grammar({
     // ─── Types ────────────────────────────────────────────────────────────────
     _type: ($) => choice($._builtin_type, $.array_type, "fn"),
 
-    _builtin_type: (_) => choice("int", "float", "bool", "string", "char"),
+    _builtin_type: (_) => choice("int", "float", "bool", "string", "char", "arr"),
 
-    array_type: ($) => seq("array", optional(seq("<", $._type, ">"))),
+    array_type: ($) => seq("array", optional(seq("[", $._type, "]"))),
 
     // ─── Literals ─────────────────────────────────────────────────────────────
     integer_literal: (_) => /[0-9]+/,
@@ -275,7 +281,18 @@ module.exports = grammar({
     // ─── Comments ─────────────────────────────────────────────────────────────
     line_comment: (_) => /\/\/.*/,
 
-    block_comment: (_) => /\/\*[^*]*\*+([^/*][^*]*\*+)*\//,
+    attribute: ($) =>
+      seq(
+        "!#",
+        "[",
+        field("name", $.identifier),
+        optional(seq(
+          "(",
+          field("value", optional(commaSep1($._expression))),
+          ")"
+        )),
+        "]"
+      ),
   },
 });
 
