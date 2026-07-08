@@ -7,6 +7,7 @@
   "for"
   "in"
   "return"
+  "match"
 ] @keyword.control
 
 (break_statement) @keyword.control
@@ -16,6 +17,8 @@
   "dec"
   "CONST"
   "fn"
+  "tag"
+  "record"
 ] @keyword.declaration
 
 [
@@ -25,6 +28,8 @@
   "string"
   "char"
   "arr"
+  "set"
+  "map"
 ] @type.builtin
 
 [
@@ -62,6 +67,43 @@
 
 ; lambda
 (lambda_expression) @function
+
+;  types (tag / record declarations)
+
+(tag_declaration
+  name: (identifier) @type)
+
+(record_declaration
+  name: (identifier) @type)
+
+(tag_variant
+  name: (identifier) @type.enum.variant)
+
+(record_field
+  name: (identifier) @property)
+
+; user-defined type reference, e.g. `dec my_struct x = ...`
+(record_field type: (identifier) @type)
+(parameter type: (identifier) @type)
+(variable_declaration type: (identifier) @type)
+(constant_declaration type: (identifier) @type)
+(array_declaration type: (identifier) @type)
+
+;  struct literals / field & variant access
+
+(struct_literal
+  type: (identifier) @type)
+
+(struct_field_init
+  name: (identifier) @property)
+
+(field_access_expression
+  field: (identifier) @property)
+
+;  match
+
+(wildcard_pattern) @constant.builtin
+"=>" @operator.arrow
 
 ;  variables
 
