@@ -142,7 +142,10 @@ module.exports = grammar({
       prec.right(
         1,
         seq(
-          field("name", $.identifier),
+          field(
+            "name",
+            choice($.identifier, $.index_expression, $.field_access_expression),
+          ),
           choice("=", "+=", "-=", "*=", "/="),
           field("value", $._expression),
         ),
@@ -186,10 +189,37 @@ module.exports = grammar({
     match_expression: ($) =>
       seq(
         "match",
-        field("value", $._expression),
+        field("value", $._expression_no_struct_literal),
         "{",
         repeat($.match_arm),
         "}",
+      ),
+
+    // Same as _expression, but excludes bare struct_literal so that
+    // match foo { ... } parses foo as the scrutinee identifier
+    // instead of greedily consuming { ... } as struct fields.
+    // (Mirrors Rust's rule forbidding bare struct literals as match/if/while
+    // scrutinees; parenthesize if a struct literal is truly intended:
+    // match (Foo { x: 1 }) { ... }.)
+    _expression_no_struct_literal: ($) =>
+      choice(
+        $.binary_expression,
+        $.unary_expression,
+        $.call_expression,
+        $.method_call_expression,
+        $.field_access_expression,
+        $.index_expression,
+        $.path_expression,
+        $.grouping_expression,
+        // Prefer reducing a bare identifier over shifting { into a
+        // struct_literal when used as a match scrutinee.
+        prec(1, $.identifier),
+        $.integer_literal,
+        $.float_literal,
+        $.string_literal,
+        $.char_literal,
+        $.bool_literal,
+        $.null_literal,
       ),
 
     match_arm: ($) =>
@@ -203,12 +233,17 @@ module.exports = grammar({
     _pattern: ($) =>
       choice(
         $.wildcard_pattern,
+        $.variant_pattern,
         $.path_expression,
         $.literal_pattern,
         $.identifier,
       ),
 
     wildcard_pattern: (_) => "_",
+
+    // Tag.Variant  (e.g. Action.Hit, EnemyState.Dead)
+    variant_pattern: ($) =>
+      seq(field("tag", $.identifier), ".", field("variant", $.identifier)),
 
     literal_pattern: ($) =>
       choice(
@@ -225,8 +260,8 @@ module.exports = grammar({
       choice(
         $.binary_expression,
         $.unary_expression,
+        $.propagate_expression,
         $.assign_expression,
-        $.index_assign_expression,
         $.call_expression,
         $.method_call_expression,
         $.field_access_expression,
@@ -262,18 +297,9 @@ module.exports = grammar({
     unary_expression: ($) =>
       prec.right(5, seq(choice("!", "-"), $._expression)),
 
-    index_assign_expression: ($) =>
-      prec.right(
-        2,
-        seq(
-          field("target", $.identifier),
-          "[",
-          field("index", $._expression),
-          "]",
-          "=",
-          field("value", $._expression),
-        ),
-      ),
+    // expr?  (error/option propagation, e.g. x.to_string()?)
+    propagate_expression: ($) =>
+      prec.left(6, seq(field("value", $._expression), "?")),
 
     // func(args) or mod::func(args)
     call_expression: ($) =>
@@ -311,7 +337,7 @@ module.exports = grammar({
     // expr[index]
     index_expression: ($) =>
       prec(
-        1,
+        2,
         seq(
           field("target", $._expression),
           "[",
@@ -378,10 +404,10 @@ module.exports = grammar({
         "fn",
       ),
 
-    _builtin_type: (_) =>
-      choice("int", "float", "bool", "string", "char", "arr"),
+    _builtin_type: (_) => choice("int", "float", "bool", "string", "char"),
 
-    array_type: ($) => seq("array", optional(seq("[", $._type, "]"))),
+    // arr[Type]  (e.g. arr[Action], arr[StaminaLevel])
+    array_type: ($) => seq("arr", "[", field("element", $._type), "]"),
 
     set_type: ($) => seq("set", "[", field("element", $._type), "]"),
 
