@@ -98,7 +98,16 @@
   name: (identifier) @property)
 
 (field_access_expression
+  object: (identifier) @type
+  field: (identifier) @type.enum.variant
+  (#match? @type "^[A-Z]"))
+
+(field_access_expression
   field: (identifier) @property)
+
+(variant_pattern
+  tag: (identifier) @type
+  variant: (identifier) @type.enum.variant)
 
 ;  match
 
