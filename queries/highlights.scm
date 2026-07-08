@@ -42,6 +42,8 @@
   "or"
 ] @keyword.operator
 
+(identifier) @variable
+
 ;  literals
 
 (integer_literal) @number
@@ -87,7 +89,6 @@
 (parameter type: (identifier) @type)
 (variable_declaration type: (identifier) @type)
 (constant_declaration type: (identifier) @type)
-(array_declaration type: (identifier) @type)
 
 ;  struct literals / field & variant access
 
@@ -125,8 +126,6 @@
 (parameter
   name: (identifier) @variable.parameter)
 
-(identifier) @variable
-
 ;  operators
 
 [
@@ -157,7 +156,12 @@
 ".." @operator.range
 "::" @operator.path
 "!"  @operator.bang
-"!#" @operator.bang
+
+; attributes
+
+"!#" @attribute
+(attribute
+    name: (identifier) @attribute)
 
 ;  punctuation
 
