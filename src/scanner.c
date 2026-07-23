@@ -1,7 +1,9 @@
 #include "tree_sitter/parser.h"
+#include <stdio.h>
 
 enum TokenType {
   BLOCK_COMMENT,
+  SLASH,
 };
 
 void *tree_sitter_rl_external_scanner_create(void) { return NULL; }
@@ -14,47 +16,63 @@ unsigned tree_sitter_rl_external_scanner_serialize(void *payload, char *buffer) 
 
 void tree_sitter_rl_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {}
 
-// Scans a (possibly nested) block comment: /* ... /* ... */ ... */
-static bool scan_block_comment(TSLexer *lexer) {
+// A plain "/" (division) is a single-char prefix of "//" (line comment),
+// "/*" (block comment), and "/=" (compound divide-assign). Tree-sitter's
+// internal lexer greedily claims "/" as division as soon as it's valid at
+// the current parser state, without ever offering the fuller "/*"/"//"
+// sequence to this scanner. So division has to be decided here too, with
+// real 2-character lookahead, rather than left as an ordinary grammar
+// token — otherwise every comment right after an expression gets its
+// leading "/" stolen by the division operator.
+bool tree_sitter_rl_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
+  fprintf(stderr, "[scan] lookahead=%d BLOCK_COMMENT_valid=%d SLASH_valid=%d\n",
+          lexer->lookahead, valid_symbols[BLOCK_COMMENT], valid_symbols[SLASH]);
+  fflush(stderr);
   if (lexer->lookahead != '/') return false;
-  lexer->advance(lexer, false);
-  if (lexer->lookahead != '*') return false;
-  lexer->advance(lexer, false);
 
-  unsigned depth = 1;
+  lexer->advance(lexer, false); // consume the first '/'
+  int32_t second = lexer->lookahead;
+  fprintf(stderr, "[scan] second=%d\n", second);
+  fflush(stderr);
 
-  while (depth > 0) {
-    if (lexer->eof(lexer)) {
-      // Unterminated comment: stop here rather than consuming the rest of the file.
-      return false;
-    }
+  if (second == '*') {
+    if (!valid_symbols[BLOCK_COMMENT]) return false;
+    lexer->advance(lexer, false); // consume '*'
 
-    if (lexer->lookahead == '/') {
-      lexer->advance(lexer, false);
-      if (lexer->lookahead == '*') {
-        lexer->advance(lexer, false);
-        depth++;
-      }
-      continue;
-    }
+    unsigned depth = 1;
+    while (depth > 0) {
+      if (lexer->eof(lexer)) return false; // unterminated comment
 
-    if (lexer->lookahead == '*') {
-      lexer->advance(lexer, false);
       if (lexer->lookahead == '/') {
         lexer->advance(lexer, false);
-        depth--;
+        if (lexer->lookahead == '*') {
+          lexer->advance(lexer, false);
+          depth++;
+        }
+        continue;
       }
-      continue;
+
+      if (lexer->lookahead == '*') {
+        lexer->advance(lexer, false);
+        if (lexer->lookahead == '/') {
+          lexer->advance(lexer, false);
+          depth--;
+        }
+        continue;
+      }
+
+      lexer->advance(lexer, false);
     }
 
-    lexer->advance(lexer, false);
+    lexer->result_symbol = BLOCK_COMMENT;
+    return true;
   }
 
-  lexer->result_symbol = BLOCK_COMMENT;
-  return true;
-}
+  // "//" (line comment) and "/=" (divide-assign) are still ordinary
+  // internal tokens — decline so the normal lexer can match them.
+  if (second == '/' || second == '=') return false;
 
-bool tree_sitter_rl_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
-  if (!valid_symbols[BLOCK_COMMENT]) return false;
-  return scan_block_comment(lexer);
+  if (!valid_symbols[SLASH]) return false;
+  lexer->result_symbol = SLASH;
+  return true;
 }

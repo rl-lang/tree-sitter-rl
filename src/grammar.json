@@ -1418,7 +1418,12 @@
                     "value": "*"
                   },
                   {
-                    "type": "STRING",
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_slash"
+                    },
+                    "named": false,
                     "value": "/"
                   }
                 ]
@@ -2437,6 +2442,10 @@
     {
       "type": "SYMBOL",
       "name": "block_comment"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_slash"
     }
   ],
   "inline": [],
