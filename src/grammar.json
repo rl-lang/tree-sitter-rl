@@ -2310,13 +2310,6 @@
         "value": "\\/\\/.*"
       }
     },
-    "block_comment": {
-      "type": "TOKEN",
-      "content": {
-        "type": "PATTERN",
-        "value": "\\/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*\\/"
-      }
-    },
     "doc_comment": {
       "type": "TOKEN",
       "content": {
@@ -2440,7 +2433,12 @@
     ]
   ],
   "precedences": [],
-  "externals": [],
+  "externals": [
+    {
+      "type": "SYMBOL",
+      "name": "block_comment"
+    }
+  ],
   "inline": [],
   "supertypes": [],
   "reserved": {}

@@ -4,6 +4,8 @@
 module.exports = grammar({
   name: "rl",
 
+  externals: ($) => [$.block_comment],
+
   extras: ($) => [/\s/, $.line_comment, $.block_comment, $.doc_comment],
 
   word: ($) => $.identifier,
@@ -427,7 +429,6 @@ module.exports = grammar({
 
     // ─── Comments ─────────────────────────────────────────────────────────────
     line_comment: (_) => token(/\/\/.*/),
-    block_comment: (_) => token(/\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//),
     doc_comment: (_) => token(prec(1, /\/\/\/+.*/)),
 
     attribute: ($) =>
