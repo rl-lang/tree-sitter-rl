@@ -8,8 +8,6 @@ module.exports = grammar({
 
   word: ($) => $.identifier,
 
-  externals: ($) => [$.block_comment, $._slash],
-
   conflicts: ($) => [[$.return_statement], [$._expression, $.struct_literal]],
 
   rules: {
@@ -297,10 +295,7 @@ module.exports = grammar({
           seq($._expression, choice("<", "<=", ">", ">="), $._expression),
         ),
         prec.left(3, seq($._expression, choice("+", "-"), $._expression)),
-        prec.left(
-          4,
-          seq($._expression, choice("*", alias($._slash, "/")), $._expression),
-        ),
+        prec.left(4, seq($._expression, choice("*", "/"), $._expression)),
         prec.left(0, seq($._expression, choice("and", "or"), $._expression)),
       ),
 
@@ -432,6 +427,7 @@ module.exports = grammar({
 
     // ─── Comments ─────────────────────────────────────────────────────────────
     line_comment: (_) => token(/\/\/.*/),
+    block_comment: (_) => token(/\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//),
     doc_comment: (_) => token(prec(1, /\/\/\/+.*/)),
 
     attribute: ($) =>

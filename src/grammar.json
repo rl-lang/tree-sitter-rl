@@ -1418,12 +1418,7 @@
                     "value": "*"
                   },
                   {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "SYMBOL",
-                      "name": "_slash"
-                    },
-                    "named": false,
+                    "type": "STRING",
                     "value": "/"
                   }
                 ]
@@ -2315,6 +2310,13 @@
         "value": "\\/\\/.*"
       }
     },
+    "block_comment": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PATTERN",
+        "value": "\\/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*\\/"
+      }
+    },
     "doc_comment": {
       "type": "TOKEN",
       "content": {
@@ -2438,16 +2440,7 @@
     ]
   ],
   "precedences": [],
-  "externals": [
-    {
-      "type": "SYMBOL",
-      "name": "block_comment"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "_slash"
-    }
-  ],
+  "externals": [],
   "inline": [],
   "supertypes": [],
   "reserved": {}
