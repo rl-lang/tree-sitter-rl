@@ -192,5 +192,6 @@
   segment: (identifier) @namespace)
 
 
-(impl_block
+((impl_block
+  type: (identifier) @type)impl_block
   type: (identifier) @type)
