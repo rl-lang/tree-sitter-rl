@@ -3998,6 +3998,11 @@
     "named": false
   },
   {
+    "type": "block_comment",
+    "named": true,
+    "extra": true
+  },
+  {
     "type": "bool",
     "named": false
   },
@@ -4020,6 +4025,11 @@
   {
     "type": "dec",
     "named": false
+  },
+  {
+    "type": "doc_comment",
+    "named": true,
+    "extra": true
   },
   {
     "type": "else",

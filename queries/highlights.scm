@@ -3,11 +3,13 @@
 [
   "if"
   "else"
+  "loop"
   "while"
   "for"
   "in"
   "return"
   "match"
+  "impl"
 ] @keyword.control
 
 (break_statement) @keyword.control
@@ -178,6 +180,8 @@
 ;  comments
 
 (line_comment)  @comment
+(block_comment) @comment
+(doc_comment)   @comment.documentation
 
 ;  module paths
 
