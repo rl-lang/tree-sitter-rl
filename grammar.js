@@ -42,7 +42,7 @@ module.exports = grammar({
         "impl",
         field("type", $.identifier),
         "{",
-        repeat(choice($.function_declaration)),
+        repeat($.function_declaration),
         "}",
       ),
 
@@ -208,12 +208,6 @@ module.exports = grammar({
         "}",
       ),
 
-    // Same as _expression, but excludes bare struct_literal so that
-    // match foo { ... } parses foo as the scrutinee identifier
-    // instead of greedily consuming { ... } as struct fields.
-    // (Mirrors Rust's rule forbidding bare struct literals as match/if/while
-    // scrutinees; parenthesize if a struct literal is truly intended:
-    // match (Foo { x: 1 }) { ... }.)
     _expression_no_struct_literal: ($) =>
       choice(
         $.binary_expression,
@@ -224,8 +218,6 @@ module.exports = grammar({
         $.index_expression,
         $.path_expression,
         $.grouping_expression,
-        // Prefer reducing a bare identifier over shifting { into a
-        // struct_literal when used as a match scrutinee.
         prec(1, $.identifier),
         $.integer_literal,
         $.float_literal,
@@ -254,7 +246,6 @@ module.exports = grammar({
 
     wildcard_pattern: (_) => "_",
 
-    // Tag.Variant  (e.g. Action.Hit, EnemyState.Dead)
     variant_pattern: ($) =>
       seq(field("tag", $.identifier), ".", field("variant", $.identifier)),
 
@@ -310,11 +301,9 @@ module.exports = grammar({
     unary_expression: ($) =>
       prec.right(5, seq(choice("!", "-"), $._expression)),
 
-    // expr?  (error/option propagation, e.g. x.to_string()?)
     propagate_expression: ($) =>
       prec.left(6, seq(field("value", $._expression), "?")),
 
-    // func(args) or mod::func(args)
     call_expression: ($) =>
       prec(
         1,
@@ -326,7 +315,6 @@ module.exports = grammar({
         ),
       ),
 
-    // expr.method(args)
     method_call_expression: ($) =>
       prec(
         2,
@@ -340,14 +328,12 @@ module.exports = grammar({
         ),
       ),
 
-    // expr.field   (e.g. my_enum.Y, record_instance.x)
     field_access_expression: ($) =>
       prec(
         1,
         seq(field("object", $._expression), ".", field("field", $.identifier)),
       ),
 
-    // expr[index]
     index_expression: ($) =>
       prec(
         2,
@@ -359,14 +345,12 @@ module.exports = grammar({
         ),
       ),
 
-    // mod::sub  or just an identifier used as a namespace path
     path_expression: ($) =>
       seq(
         field("segment", $.identifier),
         repeat1(seq("::", field("segment", $.identifier))),
       ),
 
-    // fn(type param, ...) -> type { body }
     lambda_expression: ($) =>
       seq(
         "fn",
@@ -384,7 +368,6 @@ module.exports = grammar({
 
     array_literal: ($) => seq("[", optional(commaSep1($._expression)), "]"),
 
-    // { 1, 2, 3 }  (set)  or  { 1: 2, 3: 4 }  (map)
     collection_literal: ($) =>
       seq("{", optional(commaSep1($._collection_item)), optional(","), "}"),
 
@@ -393,7 +376,6 @@ module.exports = grammar({
     map_entry: ($) =>
       seq(field("key", $._expression), ":", field("value", $._expression)),
 
-    // my_struct { x: 1, y: 2 }
     struct_literal: ($) =>
       seq(
         field("type", $.identifier),
@@ -419,7 +401,6 @@ module.exports = grammar({
 
     _builtin_type: (_) => choice("int", "float", "bool", "string", "char"),
 
-    // arr[Type]  (e.g. arr[Action], arr[StaminaLevel])
     array_type: ($) => seq("arr", "[", field("element", $._type), "]"),
 
     set_type: ($) => seq("set", "[", field("element", $._type), "]"),
@@ -444,7 +425,7 @@ module.exports = grammar({
     identifier: (_) => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
     // ─── Comments ─────────────────────────────────────────────────────────────
-    line_comment: (_) => /\/\/.*/,
+    line_comment: (_) => token(/\/\/.*/),
     block_comment: (_) => token(seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/")),
     doc_comment: (_) => token(prec(1, /\/\/\/+.*/)),
 
