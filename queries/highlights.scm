@@ -179,7 +179,6 @@
 "."  @punctuation.delimiter
 ","  @punctuation.separator
 ":"  @punctuation.separator
-";"  @punctuation.terminator
 
 "(" @punctuation.bracket
 ")" @punctuation.bracket

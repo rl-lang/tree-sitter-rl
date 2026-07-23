@@ -8,6 +8,8 @@ module.exports = grammar({
 
   word: ($) => $.identifier,
 
+  externals: ($) => [$.block_comment],
+
   conflicts: ($) => [[$.return_statement], [$._expression, $.struct_literal]],
 
   rules: {
@@ -63,11 +65,12 @@ module.exports = grammar({
 
     parameter: ($) => seq(field("type", $._type), field("name", $.identifier)),
 
-    // dec type name = value
+    // dec type name = value   (explicit type)
+    // dec name = value        (inferred type)
     variable_declaration: ($) =>
       seq(
         "dec",
-        field("type", $._type),
+        optional(field("type", $._type)),
         field("name", $.identifier),
         "=",
         field("value", $._expression),
@@ -426,7 +429,6 @@ module.exports = grammar({
 
     // ─── Comments ─────────────────────────────────────────────────────────────
     line_comment: (_) => token(/\/\/.*/),
-    block_comment: (_) => token(seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/")),
     doc_comment: (_) => token(prec(1, /\/\/\/+.*/)),
 
     attribute: ($) =>
