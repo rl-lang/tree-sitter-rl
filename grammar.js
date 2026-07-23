@@ -24,13 +24,26 @@ module.exports = grammar({
         $.import_statement,
         $.while_statement,
         $.for_statement,
+        $.loop_statement,
         $.if_statement,
+        $.impl_block,
         $.return_statement,
         $.break_statement,
         $.continue_statement,
         $.tag_declaration,
         $.record_declaration,
         $.expression_statement,
+      ),
+
+    loop_statement: ($) => seq("loop", field("body", $.block)),
+
+    impl_block: ($) =>
+      seq(
+        "impl",
+        field("type", $.identifier),
+        "{",
+        repeat(choice($.function_declaration)),
+        "}",
       ),
 
     // fn name(type param, ...) -> type { body }

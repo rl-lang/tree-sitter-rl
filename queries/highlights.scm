@@ -190,3 +190,7 @@
 
 (path_expression
   segment: (identifier) @namespace)
+
+
+(impl_block
+  type: (identifier) @type)
