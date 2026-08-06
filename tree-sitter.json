@@ -10,11 +10,14 @@
         "rl"
       ],
       "injection-regex": "^rl$",
-      "class-name": "TreeSitterRl"
+      "class-name": "TreeSitterRl",
+      "highlights": "queries/rl/highlights.scm",
+      "folds": "queries/rl/folds.scm",
+      "injections": "queries/rl/injections.scm"
     }
   ],
   "metadata": {
-    "version": "0.1.0",
+    "version": "1.0.0",
     "license": "MIT",
     "description": "Tree-sitter grammer for the RL programming language",
     "authors": [

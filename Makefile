@@ -1,6 +1,6 @@
 LANGUAGE_NAME := tree-sitter-rl
 HOMEPAGE_URL := https://github.com/mohamedgonem/tree-sitter-rl
-VERSION := 0.1.0
+VERSION := 1.0.0
 
 # repository
 SRC_DIR := src

@@ -25,14 +25,25 @@
 
 [
   "int"
+  "uint"
   "float"
   "bool"
   "string"
+  "byte"
+  "sbyte"
   "char"
   "arr"
   "set"
   "map"
+  "error"
+  "result"
+  "handle"
 ] @type.builtin
+
+[
+  "big"
+  "small"
+] @type.qualifier
 
 [
   "get"
@@ -95,8 +106,7 @@
 ; Type annotations in declarations/parameters
 (record_field type: (identifier) @type)
 (parameter type: (identifier) @type)
-(variable_declaration type: (identifier) @type)
-(constant_declaration type: (identifier) @type)
+(binding type: (identifier) @type)
 
 ; ─── Struct Literals & Fields ───────────────────────────────────────────────
 
@@ -127,10 +137,14 @@
 (identifier) @variable
 
 (variable_declaration
-  name: (identifier) @variable)
+  (binding_list
+    (binding
+      name: (identifier) @variable)))
 
 (constant_declaration
-  name: (identifier) @constant)
+  (binding_list
+    (binding
+      name: (identifier) @constant)))
 
 (parameter
   name: (identifier) @variable.parameter)
@@ -167,6 +181,7 @@
 "::" @operator.path
 "!"  @operator.bang
 "?"  @operator
+"as" @operator.cast
 
 ; ─── Attributes ─────────────────────────────────────────────────────────────
 
@@ -200,3 +215,10 @@
 
 (path_expression
   segment: (identifier) @namespace)
+
+; ─── Builtin result constructors ────────────────────────────────────────────
+; Placed last so this capture wins over the generic `(identifier) @variable`.
+
+(call_expression
+  function: (identifier) @function.builtin
+  (#any-of? @function.builtin "ok" "err"))

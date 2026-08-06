@@ -67,21 +67,27 @@ module.exports = grammar({
 
     // dec type name = value   (explicit type)
     // dec name = value        (inferred type)
+    // dec (T, T, ...) name = (v, v, ...)   (tuple type)
+    // dec T x, T y, ... = (v, v, ...)      (destructuring)
     variable_declaration: ($) =>
       seq(
         "dec",
-        optional(field("type", $._type)),
-        field("name", $.identifier),
+        field("bindings", $.binding_list),
         "=",
         field("value", $._expression),
       ),
 
-    // const type name = value
+    binding_list: ($) => seq($.binding, repeat(seq(",", $.binding))),
+
+    binding: ($) => seq(optional(field("type", $._type)), field("name", $.identifier)),
+
+    // CONST type name = value
+    // CONST (T, T, ...) name = (v, v, ...)   (tuple type)
+    // CONST T x, T y, ... = (v, v, ...)      (destructuring)
     constant_declaration: ($) =>
       seq(
         "CONST",
-        field("type", $._type),
-        field("name", $.identifier),
+        field("bindings", $.binding_list),
         "=",
         field("value", $._expression),
       ),
@@ -215,11 +221,13 @@ module.exports = grammar({
       choice(
         $.binary_expression,
         $.unary_expression,
+        $.cast_expression,
         $.call_expression,
         $.method_call_expression,
         $.field_access_expression,
         $.index_expression,
         $.path_expression,
+        $.tuple_expression,
         $.grouping_expression,
         prec(1, $.identifier),
         $.integer_literal,
@@ -267,6 +275,7 @@ module.exports = grammar({
       choice(
         $.binary_expression,
         $.unary_expression,
+        $.cast_expression,
         $.propagate_expression,
         $.assign_expression,
         $.call_expression,
@@ -279,6 +288,7 @@ module.exports = grammar({
         $.collection_literal,
         $.struct_literal,
         $.match_expression,
+        $.tuple_expression,
         $.grouping_expression,
         $.identifier,
         $.integer_literal,
@@ -364,6 +374,22 @@ module.exports = grammar({
         $.block,
       ),
 
+    cast_expression: ($) =>
+      prec.left(
+        7,
+        seq(field("value", $._expression), "as", field("type", $._type)),
+      ),
+
+    tuple_expression: ($) =>
+      seq(
+        "(",
+        $._expression,
+        ",",
+        optional(commaSep1($._expression)),
+        optional(","),
+        ")",
+      ),
+
     grouping_expression: ($) => seq("(", $._expression, ")"),
 
     range_expression: ($) =>
@@ -394,15 +420,36 @@ module.exports = grammar({
     // ─── Types ────────────────────────────────────────────────────────────────
     _type: ($) =>
       choice(
+        $._size_type,
         $._builtin_type,
         $.array_type,
         $.set_type,
         $.map_type,
+        $.result_type,
+        $.tuple_type,
         $.identifier,
         "fn",
       ),
 
-    _builtin_type: (_) => choice("int", "float", "bool", "string", "char"),
+    _size_type: ($) =>
+      choice(
+        seq("big", choice("byte", "sbyte")),
+        seq("small", choice("int", "uint", "float")),
+      ),
+
+    _builtin_type: (_) =>
+      choice(
+        "int",
+        "uint",
+        "float",
+        "bool",
+        "string",
+        "byte",
+        "sbyte",
+        "char",
+        "error",
+        "handle",
+      ),
 
     array_type: ($) => seq("arr", "[", field("element", $._type), "]"),
 
@@ -410,6 +457,11 @@ module.exports = grammar({
 
     map_type: ($) =>
       seq("map", "[", field("key", $._type), ",", field("value", $._type), "]"),
+
+    result_type: ($) => seq("result", "[", field("element", $._type), "]"),
+
+    tuple_type: ($) =>
+      seq("(", optional(commaSep1($._type)), optional(","), ")"),
 
     // ─── Literals ─────────────────────────────────────────────────────────────
     integer_literal: (_) => /[0-9]+/,

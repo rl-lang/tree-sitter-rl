@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-rl",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Tree-sitter grammar for the RL programming language",
   "author": "MohamedGonem",
   "license": "MIT",

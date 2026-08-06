@@ -1,7 +1,7 @@
 [package]
 name = "tree-sitter-rl"
 description = "Tree-sitter grammer for the RL programming language"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Mohamed Gonem <nightangelyt01@gmail.com>"]
 license = "MIT"
 readme = "README.md"
