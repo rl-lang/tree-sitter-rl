@@ -14,9 +14,12 @@ module.exports = grammar({
 
   rules: {
     // ─── Top level ────────────────────────────────────────────────────────────
-    source_file: ($) => repeat($._statement),
+    source_file: ($) => repeat($._attributed_statement),
 
     // ─── Statements ───────────────────────────────────────────────────────────
+    _attributed_statement: ($) =>
+      seq(optional(repeat($.attribute)), $._statement),
+
     _statement: ($) =>
       choice(
         $.function_declaration,
@@ -51,7 +54,6 @@ module.exports = grammar({
     // fn name(type param, ...) -> type { body }
     function_declaration: ($) =>
       seq(
-        optional(repeat($.attribute)),
         "fn",
         field("name", $.identifier),
         "(",
@@ -173,7 +175,7 @@ module.exports = grammar({
         ),
       ),
 
-    block: ($) => seq("{", repeat($._statement), "}"),
+    block: ($) => seq("{", repeat($._attributed_statement), "}"),
 
     // tag Name { Variant1, Variant2, Variant3(type, type), ... }
     tag_declaration: ($) =>

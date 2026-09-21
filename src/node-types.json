@@ -783,6 +783,10 @@
           "named": true
         },
         {
+          "type": "attribute",
+          "named": true
+        },
+        {
           "type": "break_statement",
           "named": true
         },
@@ -1879,16 +1883,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "attribute",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -4083,6 +4077,10 @@
       "types": [
         {
           "type": "array_declaration",
+          "named": true
+        },
+        {
+          "type": "attribute",
           "named": true
         },
         {
