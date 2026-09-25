@@ -10,6 +10,9 @@
   "return"
   "match"
   "impl"
+  "requires"
+  "ensures"
+  "is"
 ] @keyword.control
 
 (break_statement) @keyword.control
@@ -21,6 +24,7 @@
   "fn"
   "tag"
   "record"
+  "type"
 ] @keyword.declaration
 
 [
@@ -37,6 +41,7 @@
   "map"
   "error"
   "result"
+  "any"
   "handle"
 ] @type.builtin
 
@@ -53,7 +58,11 @@
 [
   "and"
   "or"
+  "|>"
+  "as"
 ] @keyword.operator
+
+(shebang) @comment
 
 ; ─── Literals ───────────────────────────────────────────────────────────────
 

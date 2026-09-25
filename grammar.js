@@ -10,11 +10,19 @@ module.exports = grammar({
 
   word: ($) => $.identifier,
 
-  conflicts: ($) => [[$.return_statement], [$._expression, $.struct_literal]],
+  conflicts: ($) => [
+    [$.return_statement],
+    [$._expression, $.struct_literal],
+    [$.contract_item],
+  ],
 
   rules: {
     // ─── Top level ────────────────────────────────────────────────────────────
-    source_file: ($) => repeat($._attributed_statement),
+    source_file: ($) => seq(optional($.shebang), repeat($._attributed_statement)),
+
+    // `#!/usr/bin/env rl run` - script header, not code. Must not match
+    // `#![...]` inner attributes (the second char class excludes `[`).
+    shebang: (_) => token(/#![^\[\n][^\n]*/),
 
     // ─── Statements ───────────────────────────────────────────────────────────
     _attributed_statement: ($) =>
@@ -37,6 +45,7 @@ module.exports = grammar({
         $.continue_statement,
         $.tag_declaration,
         $.record_declaration,
+        $.type_alias_declaration,
         $.expression_statement,
       ),
 
@@ -51,7 +60,7 @@ module.exports = grammar({
         "}",
       ),
 
-    // fn name(type param, ...) -> type { body }
+    // fn name(type param, ...) -> type requires ... ensures ... { body }
     function_declaration: ($) =>
       seq(
         "fn",
@@ -60,12 +69,50 @@ module.exports = grammar({
         field("params", optional($.parameter_list)),
         ")",
         optional(seq("->", field("return_type", $._type))),
+        repeat(choice($.requires_clause, $.ensures_clause)),
         field("body", $.block),
+      ),
+
+    requires_clause: ($) => seq("requires", commaSep1($.contract_item)),
+
+    ensures_clause: ($) => seq("ensures", commaSep1($.contract_item)),
+
+    // condition [, "message"] - a string after a comma belongs to the
+    // preceding condition (dynamic precedence prefers the message over
+    // starting a new string-literal condition, mirroring the parser);
+    // otherwise the comma starts the next item
+    contract_item: ($) =>
+      seq(
+        field("condition", $._expression),
+        optional(
+          prec.dynamic(
+            1,
+            seq(",", field("message", $.string_literal)),
+          ),
+        ),
       ),
 
     parameter_list: ($) => seq($.parameter, repeat(seq(",", $.parameter))),
 
-    parameter: ($) => seq(field("type", $._type), field("name", $.identifier)),
+    parameter: ($) =>
+      seq(
+        field("type", $._type),
+        field("name", $.identifier),
+        optional(field("refinement", $.refinement)),
+      ),
+
+    // `: >0`, `: >=amt`, `: =="x"` - contract refinement on a parameter
+    refinement: ($) =>
+      seq(
+        ":",
+        field("operator", choice(">", ">=", "<", "<=", "==", "!=")),
+        field("operand", choice(
+          $.integer_literal,
+          $.string_literal,
+          $.bool_literal,
+          $.identifier,
+        )),
+      ),
 
     // dec type name = value   (explicit type)
     // dec name = value        (inferred type)
@@ -110,9 +157,16 @@ module.exports = grammar({
     import_statement: ($) =>
       seq(
         "get",
-        optional(seq(commaSep1(field("names", $.identifier)), "from")),
+        optional(seq(commaSep1($.import_name), "from")),
         optional("from"),
         field("module", $.path_expression),
+      ),
+
+    import_name: ($) =>
+      choice(
+        $.identifier,
+        seq(field("name", $.identifier), "as", field("alias", $.identifier)),
+        "*",
       ),
 
     while_statement: ($) =>
@@ -136,6 +190,26 @@ module.exports = grammar({
           field("range", $.range_expression),
           field("body", $.block),
         ),
+        // for [T i = init, condition, increment] { }
+        seq(
+          "for",
+          "[",
+          field("initializer", $.for_initializer),
+          ",",
+          field("condition", $._expression),
+          ",",
+          field("increment", $._expression),
+          "]",
+          field("body", $.block),
+        ),
+      ),
+
+    for_initializer: ($) =>
+      seq(
+        field("type", $._type),
+        field("name", $.identifier),
+        "=",
+        field("value", $._expression),
       ),
 
     if_statement: ($) =>
@@ -205,6 +279,18 @@ module.exports = grammar({
         "}",
       ),
 
+    // type Name Type  |  type Name (T, T, ...)
+    // Higher precedence than a bare `_type` so the tuple target wins.
+    type_alias_declaration: ($) =>
+      prec(
+        1,
+        seq(
+          "type",
+          field("name", $.identifier),
+          field("target", choice($.tuple_type, $._type)),
+        ),
+      ),
+
     record_field: ($) =>
       seq(field("type", $._type), field("name", $.identifier)),
 
@@ -226,6 +312,8 @@ module.exports = grammar({
         $.cast_expression,
         $.call_expression,
         $.method_call_expression,
+        $.pipe_expression,
+        $.is_expression,
         $.field_access_expression,
         $.index_expression,
         $.path_expression,
@@ -282,6 +370,8 @@ module.exports = grammar({
         $.assign_expression,
         $.call_expression,
         $.method_call_expression,
+        $.pipe_expression,
+        $.is_expression,
         $.field_access_expression,
         $.index_expression,
         $.path_expression,
@@ -318,6 +408,20 @@ module.exports = grammar({
 
     propagate_expression: ($) =>
       prec.left(6, seq(field("value", $._expression), "?")),
+
+    // `a |> f(args)` - loosest binding, desugars to a method call
+    pipe_expression: ($) =>
+      prec.left(
+        -1,
+        seq(field("left", $._expression), "|>", field("right", $._expression)),
+      ),
+
+    // `value is Type` - comparison-level type test
+    is_expression: ($) =>
+      prec.left(
+        2,
+        seq(field("value", $._expression), "is", field("type", $._type)),
+      ),
 
     call_expression: ($) =>
       prec(
@@ -397,7 +501,8 @@ module.exports = grammar({
     range_expression: ($) =>
       seq(field("start", $._expression), "..", field("end", $._expression)),
 
-    array_literal: ($) => seq("[", optional(commaSep1($._expression)), "]"),
+    array_literal: ($) =>
+      seq("[", optional(seq(commaSep1($._expression), optional(","))), "]"),
 
     collection_literal: ($) =>
       seq("{", optional(commaSep1($._collection_item)), optional(","), "}"),
@@ -428,6 +533,7 @@ module.exports = grammar({
         $.set_type,
         $.map_type,
         $.result_type,
+        $.union_type,
         $.tuple_type,
         $.identifier,
         "fn",
@@ -461,6 +567,8 @@ module.exports = grammar({
       seq("map", "[", field("key", $._type), ",", field("value", $._type), "]"),
 
     result_type: ($) => seq("result", "[", field("element", $._type), "]"),
+
+    union_type: ($) => seq("any", "[", commaSep1(field("member", $._type)), "]"),
 
     tuple_type: ($) =>
       seq("(", optional(commaSep1($._type)), optional(","), ")"),
